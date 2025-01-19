@@ -48,25 +48,24 @@ class Editor(QsciScintilla):
         self.setMarginsBackgroundColor(QColor("#282c34"))
         self.setMarginsFont(self.window_font)
 
-        # Initialize both lexers
+        # Initialize lexers
         self.pylexer = QsciLexerPython()
         self.cpp_lexer = QsciLexerCPP()
         
-        # Set default font for both lexers
+        # Set default font for lexers
         self.pylexer.setDefaultFont(self.window_font)
         self.cpp_lexer.setDefaultFont(self.window_font)
 
-        # Initialize APIs for both lexers
-        self.api_py = QsciAPIs(self.pylexer)
-        self.api_cpp = QsciAPIs(self.cpp_lexer)
+        # Create a single API for all keywords
+        self.api = QsciAPIs(self.pylexer)  # Start with Python lexer's API
 
         # Add Python keywords and built-ins
         for key in keyword.kwlist + dir(__builtins__):
-            self.api_py.add(key)
+            self.api.add(key)
 
         # Add Python modules
         for _, name, _ in pkgutil.iter_modules():
-            self.api_py.add(name)
+            self.api.add(name)
 
         # C++ keywords and built-ins
         cpp_keywords = [
@@ -77,37 +76,63 @@ class Editor(QsciScintilla):
             "new", "delete", "try", "catch", "throw", "const", "static",
             "inline", "constexpr", "volatile", "operator", "friend", "this",
             "using", "namespace", "nullptr", "true", "false", "sizeof",
-            "extern", "mutable", "typedef", "enum", "union", "goto",
+            "extern", "mutable", "typedef", "enum", "union", "goto"
         ]
+
         cpp_functions = [
+            "cout", "cin", "endl",  # Remove std:: prefix for easier use
+            "vector", "string", "map",
+            "set", "sort", "find",
+            "sqrt", "pow", "abs",
+            "getline", "to_string",
+            # Add with std:: prefix
             "std::cout", "std::cin", "std::endl",
             "std::vector", "std::string", "std::map",
             "std::set", "std::sort", "std::find",
             "std::sqrt", "std::pow", "std::abs",
-            "std::getline", "std::to_string",
+            "std::getline", "std::to_string"
         ]
+
         cpp_headers = [
+            "iostream", "vector", "string", "map", "set",  # Without <>
+            "cmath", "algorithm", "fstream", "sstream", "iomanip",
+            # With <>
             "<iostream>", "<vector>", "<string>", "<map>", "<set>",
-            "<cmath>", "<algorithm>", "<fstream>", "<sstream>", "<iomanip>",
+            "<cmath>", "<algorithm>", "<fstream>", "<sstream>", "<iomanip>"
         ]
 
-        # Add all C++ elements
+        # Add C++ keywords to the same API
         for key in cpp_keywords + cpp_functions + cpp_headers:
-            self.api_cpp.add(key)
+            self.api.add(key)
 
-        # Prepare both APIs
-        self.api_py.prepare()
-        self.api_cpp.prepare()
+        # Common programming constructs
+        common_words = [
+            "main", "print", "input", "output", "file", "read", "write",
+            "open", "close", "start", "end", "next", "prev", "size", "length",
+            "count", "index", "value", "key", "data", "node", "list", "array",
+            "stack", "queue", "tree", "graph", "hash", "table"
+        ]
 
-        # Start with Python lexer by default
+        for word in common_words:
+            self.api.add(word)
+
+        # Prepare the API
+        self.api.prepare()
+
+        # Set initial lexer
         self.setLexer(self.pylexer)
 
     def set_cpp_mode(self):
+        # Transfer the API to C++ lexer
+        self.api = QsciAPIs(self.cpp_lexer)
+        self.api.prepare()
         self.setLexer(self.cpp_lexer)
 
     def set_python_mode(self):
+        # Transfer the API back to Python lexer
+        self.api = QsciAPIs(self.pylexer)
+        self.api.prepare()
         self.setLexer(self.pylexer)
-
         
 
     
