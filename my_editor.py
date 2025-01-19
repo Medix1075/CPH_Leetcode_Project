@@ -48,27 +48,27 @@ class Editor(QsciScintilla):
         self.setMarginsBackgroundColor(QColor("#282c34"))
         self.setMarginsFont(self.window_font)
 
-        # Set up Python Lexer
+        # Initialize both lexers
         self.pylexer = QsciLexerPython()
-        self.pylexer.setDefaultFont(self.window_font)
-
-        self.api = QsciAPIs(self.pylexer)
-        for key in keyword.kwlist + dir(__builtins__):  # Add built-in functions and keywords
-            self.api.add(key)
-
-        for _, name, _ in pkgutil.iter_modules():  # Add module names from the current interpreter
-            self.api.add(name)
-
-        self.api.prepare()
-
-        self.setLexer(self.pylexer)  # Use the Python lexer by default
-
-    def set_cpp_mode(self):
-        # Set up C++ Lexer
         self.cpp_lexer = QsciLexerCPP()
+        
+        # Set default font for both lexers
+        self.pylexer.setDefaultFont(self.window_font)
         self.cpp_lexer.setDefaultFont(self.window_font)
 
+        # Initialize APIs for both lexers
+        self.api_py = QsciAPIs(self.pylexer)
         self.api_cpp = QsciAPIs(self.cpp_lexer)
+
+        # Add Python keywords and built-ins
+        for key in keyword.kwlist + dir(__builtins__):
+            self.api_py.add(key)
+
+        # Add Python modules
+        for _, name, _ in pkgutil.iter_modules():
+            self.api_py.add(name)
+
+        # C++ keywords and built-ins
         cpp_keywords = [
             "int", "float", "double", "char", "void", "bool",
             "if", "else", "switch", "case", "for", "while", "do",
@@ -91,18 +91,22 @@ class Editor(QsciScintilla):
             "<cmath>", "<algorithm>", "<fstream>", "<sstream>", "<iomanip>",
         ]
 
-        for key in cpp_keywords:
+        # Add all C++ elements
+        for key in cpp_keywords + cpp_functions + cpp_headers:
             self.api_cpp.add(key)
 
-        for func in cpp_functions:
-            self.api_cpp.add(func)
-
-        for head in cpp_headers:
-            self.api_cpp.add(head)
-
+        # Prepare both APIs
+        self.api_py.prepare()
         self.api_cpp.prepare()
 
-        self.setLexer(self.cpp_lexer)  # Switch to the C++ lexer
+        # Start with Python lexer by default
+        self.setLexer(self.pylexer)
+
+    def set_cpp_mode(self):
+        self.setLexer(self.cpp_lexer)
+
+    def set_python_mode(self):
+        self.setLexer(self.pylexer)
 
         
 
